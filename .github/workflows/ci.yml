@@ -1,0 +1,18 @@
+name: CI
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+
+jobs:
+  check:
+    # 用的是 Windows 自带的 .NET Framework 编译器，只能在 Windows 上跑
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: 编译正式版
+        shell: cmd
+        run: C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe -nologo -optimize -target:winexe -out:TaskbarClear.exe TaskbarClear.cs
+      - name: 编译控制台版
+        shell: cmd
+        run: C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe -nologo -target:exe -out:TaskbarClear-console.exe TaskbarClear.cs
