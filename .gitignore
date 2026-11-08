@@ -1,5 +1,26 @@
 # 编译产物
 *.exe
 *.pdb
+*.dll
+bin/
+obj/
+
 # 运行日志
 logs/
+*.log
+
+# 密钥和本地配置
+.env
+*.key
+*.pem
+*.pfx
+
+# 系统文件
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# IDE
+.vs/
+.vscode/
+.idea/
