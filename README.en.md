@@ -47,7 +47,9 @@ After closing TranslucentTB and a few other heavy subscribers, switching Task Ma
 
 ## Install
 
-There is no prebuilt release yet, so build it yourself. Win10 ships with the compiler; nothing to install:
+Download `TaskbarClear.exe` from [Releases](https://github.com/xy-tsuki/TaskbarClear/releases) and put it in a permanent folder.
+
+Or build it yourself. Win10 ships with the compiler; nothing to install:
 
 ```bat
 C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe -nologo -optimize -target:winexe -out:TaskbarClear.exe TaskbarClear.cs
