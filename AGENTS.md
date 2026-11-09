@@ -9,7 +9,8 @@
 
 ## 目录结构
 - `TaskbarClear.cs`：全部源码，包括参数解析、找任务栏窗口、设置透明强调色、前台窗口轮询主循环。
-- `README.md`：给用户看的说明，包括工作方式、用法、已知问题、自启和编译。
+- `README.md` / `README.en.md`：中英文说明，包括为什么要做、和 TranslucentTB 的对比、安装、用法、原理和常见问题。改一边要同步另一边。
+- `LICENSE`：GPL-3.0。
 - `docs/devlog.md`：开发日志。
 - `docs/decisions.md`：技术决策记录。
 - `logs/`：本地调试日志（`/log` 参数输出），已加入 .gitignore。
