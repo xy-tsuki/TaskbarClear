@@ -4,6 +4,10 @@
 
 A tiny tool that makes the Windows 10 taskbar fully transparent. **No hooks, no injection into Explorer**, and measured zero overhead on system window events.
 
+![Top: default taskbar; bottom: fully transparent taskbar with TaskbarClear](docs/preview/preview.png)
+
+<sub>Illustration: the wallpaper and icons are mock-ups, not a real screenshot. Source: [docs/preview/preview.html](docs/preview/preview.html).</sub>
+
 ## Why
 
 While chasing occasional stutter in Apex Legends and whole-system freezes when switching Task Manager tabs, I used a probe to time each call to `NotifyWinEvent` (the function Windows uses to broadcast window events):
