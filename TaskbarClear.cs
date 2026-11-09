@@ -131,7 +131,7 @@ static class TaskbarClear {
     [DllImport("shell32.dll", CharSet = CharSet.Unicode)] static extern bool Shell_NotifyIcon(int msg, ref NOTIFYICONDATA data);
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode)] static extern IntPtr GetModuleHandle(string name);
 
-    const uint WM_DESTROY = 0x0002, WM_NULL = 0x0000, WM_TIMER = 0x0113, WM_APP_TRAY = 0x8001;
+    const uint WM_DESTROY = 0x0002, WM_NULL = 0x0000, WM_TIMER = 0x0113, WM_COMMAND = 0x0111, WM_APP_TRAY = 0x8001;
     const uint WM_LBUTTONDBLCLK = 0x0203, WM_RBUTTONUP = 0x0205, WM_CONTEXTMENU = 0x007B;
     const int NIM_ADD = 0, NIM_DELETE = 2, NIF_MESSAGE = 1, NIF_ICON = 2, NIF_TIP = 4;
     const uint MF_STRING = 0, MF_GRAYED = 1, MF_CHECKED = 8, MF_SEPARATOR = 0x800;
@@ -198,6 +198,11 @@ static class TaskbarClear {
         int cmd = TrackPopupMenu(menu, TPM_RIGHTBUTTON | TPM_RETURNCMD | TPM_NONOTIFY, p.X, p.Y, 0, hwndMain, IntPtr.Zero);
         PostMessage(hwndMain, WM_NULL, IntPtr.Zero, IntPtr.Zero);
         DestroyMenu(menu);
+        RunCommand(cmd);
+    }
+
+    // 菜单命令；WM_COMMAND 也走这里，方便从外部发消息触发（自测用）
+    static void RunCommand(int cmd) {
         switch (cmd) {
             case CMD_APPLY: Apply(false); StartSettle(); break;
             case CMD_AUTOSTART: SetAutostart(!AutostartOn()); break;
@@ -217,8 +222,12 @@ static class TaskbarClear {
         RemoveTrayIcon();
         try { mutex.ReleaseMutex(); } catch { }
         var sb = new System.Text.StringBuilder();
-        foreach (var a in startArgs) sb.Append(a.IndexOf(' ') >= 0 ? "\"" + a + "\" " : a + " ");
-        try { System.Diagnostics.Process.Start(exePath, sb.ToString().Trim()); } catch (Exception e) { Log("restart failed: " + e.Message); }
+        foreach (var a in startArgs) {
+            if (a.ToLowerInvariant() == "/restarted") continue;
+            sb.Append(a.IndexOf(' ') >= 0 ? "\"" + a + "\" " : a + " ");
+        }
+        sb.Append("/restarted");   // 告诉新进程：旧进程还没完全退出，要等它放锁
+        try { System.Diagnostics.Process.Start(exePath, sb.ToString()); } catch (Exception e) { Log("restart failed: " + e.Message); }
         showTray = false;   // 图标已经移除，避免退出时重复删除
         DestroyWindow(hwndMain);
     }
@@ -273,6 +282,7 @@ static class TaskbarClear {
 
     static IntPtr WndProc(IntPtr hwnd, uint msg, IntPtr wParam, IntPtr lParam) {
         if (msg == WM_TIMER) { Tick(); return IntPtr.Zero; }
+        if (msg == WM_COMMAND) { RunCommand((int)(wParam.ToInt64() & 0xFFFF)); return IntPtr.Zero; }
         if (msg == WM_APP_TRAY) {
             uint ev = (uint)lParam.ToInt64();
             if (ev == WM_RBUTTONUP || ev == WM_CONTEXTMENU) ShowMenu();
@@ -306,9 +316,14 @@ static class TaskbarClear {
         startArgs = args;
         zh = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "zh";
 
-        bool created;
-        mutex = new Mutex(true, @"Local\TaskbarClearSingleInstance", out created);
-        if (!created) return 1;
+        // 不能用 new Mutex(true, ..., out created) 判断：created 只说明互斥量是不是新建的。
+        // 重启时旧进程已放开锁但句柄还在，互斥量仍然存在，新进程会被误判成重复实例而退出。
+        // 所以改为打开后用 WaitOne 抢锁；重启出来的进程最多等 5 秒，让旧进程退干净。
+        mutex = new Mutex(false, @"Local\TaskbarClearSingleInstance");
+        bool owned;
+        try { owned = mutex.WaitOne(all.Contains("/restarted") ? 5000 : 0); }
+        catch (AbandonedMutexException) { owned = true; }   // 上一个实例被强杀，锁归我们
+        if (!owned) { mutex.Dispose(); return 1; }
         try {
             SetProcessDPIAware();   // 高 DPI 下托盘图标和菜单不发糊
             IntPtr inst = GetModuleHandle(null);
