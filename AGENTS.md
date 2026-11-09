@@ -13,6 +13,7 @@
 - `README.md` / `README.en.md`：中英文说明，包括为什么要做、和 TranslucentTB 的对比、安装、用法、原理和常见问题。改一边要同步另一边。
 - `LICENSE`：GPL-3.0。
 - `bench/`：性能复测脚本。`winevent_probe.ps1` 测 NotifyWinEvent 每次调用耗时；`compare.ps1` 交替对照 TaskbarClear 运行与未运行。两个文件要保存为带 BOM 的 UTF-8，否则 Windows PowerShell 5.1 会按 GBK 读坏中文。
+- `CHANGELOG.md`：写给使用者看的更新日志，每次发版在最上面加一节（新功能 / 修复 / 其他改进）。
 - `docs/devlog.md`：开发日志。
 - `docs/decisions.md`：技术决策记录。
 - `logs/`：本地调试日志（`/log` 参数输出），已加入 .gitignore。
