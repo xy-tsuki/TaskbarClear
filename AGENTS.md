@@ -33,7 +33,7 @@
 - 开机自启：注册表 `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` 下的 `TaskbarClear` 项。
 
 ## 已知问题
-- 在副屏（笔记本内置屏幕）打开开始菜单时，主屏搜索框有一半以上的概率闪烁。已确认跟本程序无关：退出程序并 `/restore` 后照样闪。疑似 Explorer 或 ExplorerPatcher 的问题。
+- 在副屏（笔记本内置屏幕）打开开始菜单时，主屏搜索框有一半以上的概率闪烁。已确认跟本程序无关，原因是 ExplorerPatcher 的副屏图标居中（`HKCU\Software\ExplorerPatcher\MMOldTaskbarAl`）。用户机器上已经把它设为 0，不要再为这个现象改程序。
 - 没有自动测试，回归只能人工看。
 - 用户装了 ExplorerPatcher（dxgi.dll），用来让主副屏任务栏图标居中，要保留。它可能影响副屏任务栏的行为。
 

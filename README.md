@@ -20,11 +20,14 @@
 - `TaskbarClear.exe /once`：只设置一次，然后退出。
 - `TaskbarClear.exe /restore`：恢复系统默认样式，然后退出。
 
-## 已知问题：副屏打开开始菜单时，主屏搜索框偶尔闪烁
+## 常见问题：副屏打开开始菜单时，主屏搜索框偶尔闪烁
 - 现象：在副屏（笔记本内置屏幕）打开开始菜单时，主屏任务栏的搜索框有一半以上的概率会闪，没找到稳定复现的规律。
 - **跟 TaskbarClear 无关**：退出 TaskbarClear 并运行 `/restore` 恢复系统样式后，照样会闪（2026-11-09 实测）。程序日志也显示，开始菜单打开期间它没有写过任务栏。
-- 可能的原因：Explorer 自身（Win10 19045）或 ExplorerPatcher 在多屏下的重绘行为。
-- 规避办法：把任务栏搜索改成只显示图标或隐藏（右键任务栏 → 搜索）。
+- **原因是 ExplorerPatcher 的副屏图标居中**（2026-11-09 用对照实验确认）：
+  - 临时停用 ExplorerPatcher（把 `C:\Windows\dxgi.dll` 改名后重启 Explorer）：不闪。
+  - 恢复 ExplorerPatcher，只关掉副屏居中（`HKCU\Software\ExplorerPatcher` 下的 `MMOldTaskbarAl` 设为 0），主屏保持居中（`OldTaskbarAl` = 1）：不闪。
+- 解决办法：在 ExplorerPatcher 设置里关掉副屏任务栏的图标居中，或者直接运行下面这条命令，然后重启 Explorer：
+  `reg add HKCU\Software\ExplorerPatcher /v MMOldTaskbarAl /t REG_DWORD /d 0 /f`
 
 ## 开机自启
 已写入注册表 `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`，名称为 `TaskbarClear`。
