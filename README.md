@@ -47,7 +47,9 @@
 
 ## 安装
 
-目前没有发布编译好的版本，需要自己编译。Win10 自带编译器，不用装任何东西：
+从 [Releases](https://github.com/xy-tsuki/TaskbarClear/releases) 下载 `TaskbarClear.exe`，放到一个固定的目录。
+
+也可以自己编译。Win10 自带编译器，不用装任何东西：
 
 ```bat
 C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe -nologo -optimize -target:winexe -out:TaskbarClear.exe TaskbarClear.cs
