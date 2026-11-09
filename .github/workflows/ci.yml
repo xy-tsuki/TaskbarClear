@@ -12,7 +12,7 @@ jobs:
       - uses: actions/checkout@v7
       - name: 编译正式版
         shell: cmd
-        run: C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe -nologo -optimize -target:winexe -out:TaskbarClear.exe TaskbarClear.cs
+        run: C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe -nologo -optimize -target:winexe -win32icon:assets/icon/TaskbarClear.ico -out:TaskbarClear.exe TaskbarClear.cs
       - name: 编译控制台版
         shell: cmd
-        run: C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe -nologo -target:exe -out:TaskbarClear-console.exe TaskbarClear.cs
+        run: C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe -nologo -target:exe -win32icon:assets/icon/TaskbarClear.ico -out:TaskbarClear-console.exe TaskbarClear.cs

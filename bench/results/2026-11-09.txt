@@ -1,0 +1,73 @@
+# 2026-11-09 对照原始输出
+# 程序版本：TaskbarClear 1.1.0；TranslucentTB 2026.2.0.0（应用商店版）
+# 命令：bench\compare.ps1 -Rounds 5 -SettleMs 3000（测 TranslucentTB 时加 -Name TranslucentTB -Start shell:AppsFolder\...）
+# B 组用的是本机现有配置：最大化窗口、开始菜单打开、搜索打开三个动态状态开启；C 组把 settings.json 里所有 enabled 改为 false，测完已恢复。
+
+===== A. TaskbarClear =====
+系统：Windows 10 Home China 22H2 build 19045.6466
+CPU：AMD Ryzen 7 5800H with Radeon Graphics
+程序：TaskbarClear（E:\Documents\ChatGPT\TaskbarClear\TaskbarClear.exe）
+每种状态测 7 遍取中位数，共 5 轮。单位 µs/次。
+
+第 1 轮 运行中：CREATE 25.8  NAMECHANGE 1.2
+第 1 轮 未运行：CREATE 41.2  NAMECHANGE 1.2
+第 2 轮 运行中：CREATE 28.3  NAMECHANGE 1.2
+第 2 轮 未运行：CREATE 23.9  NAMECHANGE 1.1
+第 3 轮 运行中：CREATE 28.6  NAMECHANGE 1.1
+第 3 轮 未运行：CREATE 95.4  NAMECHANGE 1.1
+第 4 轮 运行中：CREATE 17.4  NAMECHANGE 1.2
+第 4 轮 未运行：CREATE 43.3  NAMECHANGE 1.2
+第 5 轮 运行中：CREATE 43.8  NAMECHANGE 1.2
+第 5 轮 未运行：CREATE 18.7  NAMECHANGE 1.2
+
+汇总（各轮中位数的中位数）：
+  运行中：CREATE 28.3  NAMECHANGE 1.2
+  未运行：CREATE 41.2  NAMECHANGE 1.2
+判断方法：如果「运行中」在每一轮都明显高于同轮的「未运行」，说明它增加了开销；互有高低则说明测不出差别。
+===== B. TranslucentTB 当前配置（最大化/开始菜单/搜索 三个动态状态开启）=====
+已临时退出 TaskbarClear，测完会重新启动它
+系统：Windows 10 Home China 22H2 build 19045.6466
+CPU：AMD Ryzen 7 5800H with Radeon Graphics
+程序：TranslucentTB（shell:AppsFolder\28017CharlesMilette.TranslucentTB_v826wp6bftszj!TranslucentTB）
+每种状态测 7 遍取中位数，共 5 轮。单位 µs/次。
+
+第 1 轮 运行中：CREATE 106.6  NAMECHANGE 113.3
+第 1 轮 未运行：CREATE 77.1  NAMECHANGE 1.2
+第 2 轮 运行中：CREATE 68.3  NAMECHANGE 94.2
+第 2 轮 未运行：CREATE 18.4  NAMECHANGE 1.1
+第 3 轮 运行中：CREATE 118.2  NAMECHANGE 118.7
+第 3 轮 未运行：CREATE 18  NAMECHANGE 1.2
+第 4 轮 运行中：CREATE 50.7  NAMECHANGE 69.3
+第 4 轮 未运行：CREATE 13.9  NAMECHANGE 1.2
+第 5 轮 运行中：CREATE 88.4  NAMECHANGE 93.3
+第 5 轮 未运行：CREATE 20.2  NAMECHANGE 1.2
+已重新启动 TaskbarClear
+
+汇总（各轮中位数的中位数）：
+  运行中：CREATE 88.4  NAMECHANGE 94.2
+  未运行：CREATE 18.4  NAMECHANGE 1.2
+判断方法：如果「运行中」在每一轮都明显高于同轮的「未运行」，说明它增加了开销；互有高低则说明测不出差别。
+
+===== C. TranslucentTB 关闭全部动态状态（第一次跑到第 3 轮时启动 TranslucentTB 报 Class not registered 中断，以下是重跑结果）=====
+改后仍为 true 的项：0
+已临时退出 TaskbarClear，测完会重新启动它
+系统：Windows 10 Home China 22H2 build 19045.6466
+CPU：AMD Ryzen 7 5800H with Radeon Graphics
+程序：TranslucentTB（shell:AppsFolder\28017CharlesMilette.TranslucentTB_v826wp6bftszj!TranslucentTB）
+每种状态测 7 遍取中位数，共 5 轮。单位 µs/次。
+
+第 1 轮 运行中：CREATE 49.2  NAMECHANGE 70.2
+第 1 轮 未运行：CREATE 8.3  NAMECHANGE 3.5
+第 2 轮 运行中：CREATE 47.9  NAMECHANGE 64.5
+第 2 轮 未运行：CREATE 9.3  NAMECHANGE 1.2
+第 3 轮 运行中：CREATE 51.7  NAMECHANGE 77.2
+第 3 轮 未运行：CREATE 11.1  NAMECHANGE 1.2
+第 4 轮 运行中：CREATE 50.5  NAMECHANGE 64.3
+第 4 轮 未运行：CREATE 10.1  NAMECHANGE 1.3
+第 5 轮 运行中：CREATE 49  NAMECHANGE 67.3
+第 5 轮 未运行：CREATE 13.3  NAMECHANGE 1.5
+已重新启动 TaskbarClear
+
+汇总（各轮中位数的中位数）：
+  运行中：CREATE 49.2  NAMECHANGE 67.3
+  未运行：CREATE 10.1  NAMECHANGE 1.3

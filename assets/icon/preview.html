@@ -1,0 +1,45 @@
+<!doctype html>
+<!-- 图标预览：把 icon.svg 按真实像素画到画布上，再按整数倍放大（不平滑），看到的就是托盘里的实际像素。
+     导出：bash ~/.claude/skills/readme-shot/scripts/render.sh assets/icon/preview.html assets/icon/preview.png 1000 600 -->
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<style>
+  body { margin: 0; width: 1000px; height: 600px; font-family: "Microsoft YaHei UI", sans-serif; }
+  .row { height: 200px; display: flex; align-items: center; gap: 36px; padding: 0 28px; box-sizing: border-box; }
+  .cell { display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 12px; }
+  canvas { image-rendering: pixelated; }
+  .light { background: #f3f3f3; color: #333; }
+  .dark { background: #202020; color: #ddd; }
+  .wall { background: linear-gradient(90deg, #5679ad, #c77d8c, #f2b37a); color: #fff; }
+  .name { width: 120px; font-size: 14px; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="row light"><div class="name">浅色背景</div></div>
+<div class="row dark"><div class="name">深色任务栏</div></div>
+<div class="row wall"><div class="name">透明任务栏<br>（压在壁纸上）</div></div>
+<script>
+  const img = new Image();
+  img.onload = () => {
+    for (const row of document.querySelectorAll('.row')) {
+      for (const [s, zoom] of [[16, 1], [16, 8], [24, 5], [32, 4], [48, 3]]) {
+        const src = document.createElement('canvas');
+        src.width = src.height = s;
+        src.getContext('2d').drawImage(img, 0, 0, s, s);
+        const out = document.createElement('canvas');
+        out.width = out.height = s * zoom;
+        const g = out.getContext('2d');
+        g.imageSmoothingEnabled = false;
+        g.drawImage(src, 0, 0, s * zoom, s * zoom);
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.append(out, `${s}px${zoom > 1 ? ' ×' + zoom : '（实际大小）'}`);
+        row.append(cell);
+      }
+    }
+  };
+  img.src = 'icon.svg';
+</script>
+</body>
+</html>
