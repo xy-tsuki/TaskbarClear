@@ -12,6 +12,7 @@
 - `assets/icon/`：图标的 SVG 源文件、多尺寸 `TaskbarClear.ico` 和生成脚本 `build-icon.ps1`，编译时用 `-win32icon` 嵌进 exe。
 - `README.md` / `README.en.md`：中英文说明，包括为什么要做、和 TranslucentTB 的对比、安装、用法、原理和常见问题。改一边要同步另一边。
 - `LICENSE`：GPL-3.0。
+- `bench/`：性能复测脚本。`winevent_probe.ps1` 测 NotifyWinEvent 每次调用耗时；`compare.ps1` 交替对照 TaskbarClear 运行与未运行。两个文件要保存为带 BOM 的 UTF-8，否则 Windows PowerShell 5.1 会按 GBK 读坏中文。
 - `docs/devlog.md`：开发日志。
 - `docs/decisions.md`：技术决策记录。
 - `logs/`：本地调试日志（`/log` 参数输出），已加入 .gitignore。
@@ -26,6 +27,7 @@
 - 手动验证：`TaskbarClear.exe /once` 设置一次透明后退出；`TaskbarClear.exe /restore` 恢复系统样式后退出。
 - 类型检查 / lint：没有，编译通过就算检查通过。
 - 测试：没有自动测试。行为只能人眼看任务栏来验证。
+- 性能回归：改动可能影响开销时跑 `powershell -ExecutionPolicy Bypass -File bench\compare.ps1 -Rounds 5`，看每轮「运行中」是否稳定高于「未运行」。README 的性能表述只写「本机对照中未测到增加」这类可复测的说法，不写「为零」。
 
 ## 架构要点
 - 透明效果：对 `Shell_TrayWnd`（主屏）和所有 `Shell_SecondaryTrayWnd`（副屏）设置 `ACCENT_ENABLE_TRANSPARENTGRADIENT`，Flags=2，Color=0。

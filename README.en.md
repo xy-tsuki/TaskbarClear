@@ -2,7 +2,7 @@
 
 [中文](README.md) | English
 
-A tiny tool that makes the Windows 10 taskbar fully transparent. **No hooks, no injection into Explorer**, and measured zero overhead on system window events.
+A tiny tool that makes the Windows 10 taskbar fully transparent. **No hooks, no injection into Explorer**, and in a side-by-side comparison on my machine, no increase in `NotifyWinEvent` call time was measured (method and steps to re-run: [Measuring it yourself](#measuring-it-yourself)).
 
 ![Top: default taskbar; bottom: fully transparent taskbar with TaskbarClear](docs/preview/preview.png)
 
@@ -23,9 +23,9 @@ Closing resident programs one by one showed TranslucentTB was one of the biggest
 | TranslucentTB not running | 20.7 µs | 0.8 µs |
 | TranslucentTB running (dynamic states on, default) | 69–84 µs | 81–89 µs |
 | TranslucentTB running (all dynamic states off) | 47 µs | 46 µs |
-| **TaskbarClear running** | **same as not running** | **same as not running** |
+| **TaskbarClear running** | **no consistent difference from not running** | **no consistent difference from not running** |
 
-(Standard user, median of 7 runs. For TaskbarClear I compared three cases: running, not running, and applied once then exited. All three gave the same numbers.)
+(Standard user, median of 7 runs, using an early version of the probe. Full comparison data for the TaskbarClear row and how to re-run it: [Measuring it yourself](#measuring-it-yourself).)
 
 After closing TranslucentTB and a few other heavy subscribers, switching Task Manager tabs went from a **30–60 s full freeze** to **done in 5–10 s**. I still wanted a transparent taskbar, so I wrote TaskbarClear: it keeps only the "transparent" feature and implements it without any hook.
 
@@ -35,11 +35,11 @@ After closing TranslucentTB and a few other heavy subscribers, switching Task Ma
 |---|---|---|
 | WinEvent hooks | None | Yes |
 | Injects into Explorer | No | Yes (`ExplorerHooks.dll`) |
-| Extra cost per window event | Measured zero | Tens of µs per event |
+| Extra cost per window event | No increase measured on my machine | Tens of µs per event, measured on my machine |
 | Size | One exe, about 40 KB (mostly the icon) | Needs installing |
 | Dependencies | .NET Framework 4.x built into Win10 | Ships its own runtime |
 | Source | One file, about 350 lines | Full application project |
-| Resource use | About 20 MB RAM, near-zero CPU | — |
+| Resource use | About 20 MB RAM; CPU measured at about 16 ms per minute on my machine (0.03% of one core) | — |
 | Dynamic looks (tint when maximized, Start menu style, etc.) | Not supported | Supported |
 
 **Good fit** if you just want a fully transparent taskbar and care about stable frame times or system responsiveness.
@@ -89,7 +89,7 @@ Right-click the tray icon to open the menu. It is shown in Chinese when the syst
 | Restart TaskbarClear | Restart with the same arguments |
 | Exit (restore default taskbar) | Restore the system taskbar look, then quit |
 
-The tray icon uses plain `Shell_NotifyIcon` with no hooks, so the per-event cost is still zero. The icon comes back by itself after Explorer restarts.
+The tray icon uses plain `Shell_NotifyIcon` with no hooks. I re-ran the comparison with the tray icon and still measured no increase in `NotifyWinEvent` time. The icon comes back by itself after Explorer restarts.
 
 ## Usage
 
@@ -111,6 +111,47 @@ The tray icon uses plain `Shell_NotifyIcon` with no hooks, so the per-event cost
 - While Start, Search, Action Center, Task View or the taskbar itself is in front, Explorer is styling the taskbar itself, so TaskbarClear **leaves the taskbar alone** to avoid a tug-of-war that causes flicker.
 - When focus returns to a normal window it re-applies at once, then again after 100, 300 and 700 ms, plus a fallback every 30 s.
 - When Explorer restarts it broadcasts a `TaskbarCreated` message. TaskbarClear then applies transparency to the new taskbar right away and re-adds its tray icon.
+
+## Measuring it yourself
+
+"Overhead" here means the time each `NotifyWinEvent` call takes. For every window event it broadcasts, the system walks the WinEvent subscribers while holding the global USER lock, so more or heavier subscribers make each call slower. The comparison is simple: time these calls with TaskbarClear running and not running, and see whether there is a consistent gap.
+
+**Test machine**: Windows 10 Home China 22H2 (build 19045.6466), AMD Ryzen 7 5800H, standard user, ExplorerPatcher installed.
+
+**Results** (2026-11-09, v1.1.0 with tray icon; each cell is the median of 7 passes, in µs per call):
+
+| Round | Running CREATE | Not running CREATE | Running NAMECHANGE | Not running NAMECHANGE |
+|---|---|---|---|---|
+| 1 | 19.9 | 21.2 | 3.2 | 5.2 |
+| 2 | 7.3 | 8.8 | 4.3 | 2.5 |
+| 3 | 10.7 | 8.1 | 1.8 | 1.7 |
+| 4 | 13.0 | 10.0 | 3.9 | 3.6 |
+| 5 | 10.2 | 29.8 | 2.9 | 4.1 |
+| **Median** | **10.7** | **10.0** | **3.2** | **3.6** |
+
+Neither state is consistently higher; the differences are within the round-to-round noise. So the conclusion is: **in this machine's comparison, no increase in `NotifyWinEvent` call time was measured.**
+
+**Re-run it** (only the built-in Windows PowerShell is needed, no admin rights):
+
+1. Put `TaskbarClear.exe` next to the repository's [`bench/`](bench) folder (`bench` in the same folder as the exe).
+2. Run the alternating comparison. It takes about 1–2 minutes, starts and stops TaskbarClear by itself, and puts things back the way they were afterwards:
+
+   ```bat
+   powershell -ExecutionPolicy Bypass -File bench\compare.ps1 -Rounds 5
+   ```
+
+3. Check whether "running" is clearly higher than "not running" in every round. If they go back and forth, no difference was measured.
+
+To just see the current cost (for example before and after closing some program, to find heavy subscribers), run the probe alone:
+
+```bat
+powershell -ExecutionPolicy Bypass -File bench\winevent_probe.ps1
+```
+
+**What this does not cover**
+- It only measures WinEvent dispatch cost, not the CPU used by polling itself, and not game frame times.
+- It was measured on the one machine above only. The numbers depend heavily on background programs and can vary several-fold on the same machine at different times, so only compare runs alternated in the same session; absolute numbers from different machines are not comparable.
+- A new process measures much higher for its first few seconds after creating a window. The probe discards one pass and takes the median of several passes to avoid this. The TranslucentTB numbers under "Why" came from an early version of the probe that did not do this, so their absolute values may be inflated; the before/after comparison within the same session still holds.
 
 ## FAQ
 
