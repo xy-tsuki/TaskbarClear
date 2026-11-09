@@ -1,0 +1,54 @@
+﻿# 2026-11-10 重测 TaskbarClear 1.1.0（11-09 那组 CREATE 波动太大：未运行一轮 18.7、一轮 95.4）
+# 命令：powershell -ExecutionPolicy Bypass -File bench\compare.ps1 -Rounds 7，连跑两组
+
+===== 第 1 组 =====
+系统：Windows 10 Home China 22H2 build 19045.6466
+CPU：AMD Ryzen 7 5800H with Radeon Graphics
+程序：TaskbarClear（E:\Documents\ChatGPT\TaskbarClear\TaskbarClear.exe）
+每种状态测 7 遍取中位数，共 7 轮。单位 µs/次。
+
+第 1 轮 运行中：CREATE 11.4  NAMECHANGE 0.6
+第 1 轮 未运行：CREATE 15.9  NAMECHANGE 0.6
+第 2 轮 运行中：CREATE 18.6  NAMECHANGE 0.6
+第 2 轮 未运行：CREATE 15.7  NAMECHANGE 0.5
+第 3 轮 运行中：CREATE 15.4  NAMECHANGE 0.6
+第 3 轮 未运行：CREATE 13.5  NAMECHANGE 0.5
+第 4 轮 运行中：CREATE 16.3  NAMECHANGE 1.2
+第 4 轮 未运行：CREATE 10.6  NAMECHANGE 0.6
+第 5 轮 运行中：CREATE 14  NAMECHANGE 0.5
+第 5 轮 未运行：CREATE 13.6  NAMECHANGE 0.7
+第 6 轮 运行中：CREATE 14.9  NAMECHANGE 0.6
+第 6 轮 未运行：CREATE 13.9  NAMECHANGE 0.7
+第 7 轮 运行中：CREATE 15.8  NAMECHANGE 0.9
+第 7 轮 未运行：CREATE 17.6  NAMECHANGE 0.6
+
+汇总（各轮中位数的中位数）：
+  运行中：CREATE 15.4  NAMECHANGE 0.6
+  未运行：CREATE 13.9  NAMECHANGE 0.6
+判断方法：如果「运行中」在每一轮都明显高于同轮的「未运行」，说明它增加了开销；互有高低则说明测不出差别。
+
+===== 第 2 组 =====
+系统：Windows 10 Home China 22H2 build 19045.6466
+CPU：AMD Ryzen 7 5800H with Radeon Graphics
+程序：TaskbarClear（E:\Documents\ChatGPT\TaskbarClear\TaskbarClear.exe）
+每种状态测 7 遍取中位数，共 7 轮。单位 µs/次。
+
+第 1 轮 运行中：CREATE 14.1  NAMECHANGE 1
+第 1 轮 未运行：CREATE 13.8  NAMECHANGE 0.5
+第 2 轮 运行中：CREATE 12.2  NAMECHANGE 0.6
+第 2 轮 未运行：CREATE 21  NAMECHANGE 0.9
+第 3 轮 运行中：CREATE 14.7  NAMECHANGE 0.5
+第 3 轮 未运行：CREATE 23.6  NAMECHANGE 0.9
+第 4 轮 运行中：CREATE 9.6  NAMECHANGE 0.9
+第 4 轮 未运行：CREATE 18.3  NAMECHANGE 0.7
+第 5 轮 运行中：CREATE 13.8  NAMECHANGE 0.9
+第 5 轮 未运行：CREATE 17.3  NAMECHANGE 1
+第 6 轮 运行中：CREATE 38.6  NAMECHANGE 1.1
+第 6 轮 未运行：CREATE 27.2  NAMECHANGE 1.5
+第 7 轮 运行中：CREATE 37.4  NAMECHANGE 0.5
+第 7 轮 未运行：CREATE 14.8  NAMECHANGE 0.6
+
+汇总（各轮中位数的中位数）：
+  运行中：CREATE 14.1  NAMECHANGE 0.9
+  未运行：CREATE 18.3  NAMECHANGE 0.9
+判断方法：如果「运行中」在每一轮都明显高于同轮的「未运行」，说明它增加了开销；互有高低则说明测不出差别。
