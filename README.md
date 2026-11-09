@@ -4,6 +4,10 @@
 
 一个让 Windows 10 任务栏完全透明的小工具。**不装任何钩子，不注入 Explorer**，对系统窗口事件的开销实测为零。
 
+![上：系统默认任务栏；下：TaskbarClear 的全透明任务栏](docs/preview/preview.png)
+
+<sub>示意图：壁纸和图标是模拟的，不是真实截图。源文件是 [docs/preview/preview.html](docs/preview/preview.html)。</sub>
+
 ## 为什么要做
 
 我在排查 Apex Legends 偶发卡顿和任务管理器切换标签时整机卡死的问题时，用探针测了 `NotifyWinEvent`（Windows 广播窗口事件的函数）每次调用的耗时：
