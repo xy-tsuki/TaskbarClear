@@ -18,15 +18,15 @@ While chasing occasional stutter in Apex Legends and whole-system freezes when s
 
 Closing resident programs one by one showed TranslucentTB was one of the biggest subscribers:
 
-Here are the results re-measured in one session with the comparison script in this repository (running / not running, µs per call):
+Here are the results re-measured with the comparison script in this repository (running / not running, µs per call):
 
 | Program | CREATE event | NAMECHANGE event | Higher in every round? |
 |---|---|---|---|
 | TranslucentTB 2026.2 (dynamic states on) | 88.4 / 18.4 | 94.2 / 1.2 | Yes, 5 of 5 |
 | TranslucentTB 2026.2 (all dynamic states off) | 49.2 / 10.1 | 67.3 / 1.3 | Yes, 5 of 5 |
-| **TaskbarClear 1.1.0** | **28.3 / 41.2** | **1.2 / 1.2** | **No, goes both ways** |
+| **TaskbarClear 1.1.0** | **15.4 / 13.9** | **0.6 / 0.6** | **No: higher in 4 of 7, lower in 3** |
 
-(Each cell is the median of 5 rounds, 7 passes per round. NAMECHANGE shows the difference most clearly: TranslucentTB adds 66–93 µs per event, while no difference was measured for TaskbarClear. Test machine, how to re-run, and what this does not cover: [Measuring it yourself](#measuring-it-yourself).)
+(Each cell is the median across rounds, 7 passes per round. The two TranslucentTB rows were measured on 2026-11-09 with 5 rounds each; TaskbarClear on 2026-11-10 with 7 rounds. NAMECHANGE shows the difference most clearly: TranslucentTB adds 66–93 µs per event, while no difference was measured for TaskbarClear. CREATE itself fluctuates by a few to tens of µs. Test machine, how to re-run, and what this does not cover: [Measuring it yourself](#measuring-it-yourself).)
 
 After closing TranslucentTB and a few other heavy subscribers, switching Task Manager tabs went from a **30–60 s full freeze** to **done in 5–10 s**. I still wanted a transparent taskbar, so I wrote TaskbarClear: it keeps only the "transparent" feature and implements it without any hook.
 
@@ -119,18 +119,20 @@ The tray icon uses plain `Shell_NotifyIcon` with no hooks. I re-ran the comparis
 
 **Test machine**: Windows 10 Home China 22H2 (build 19045.6466), AMD Ryzen 7 5800H, standard user, ExplorerPatcher installed.
 
-**TaskbarClear round by round** (2026-11-09, v1.1.0 with tray icon; each cell is the median of 7 passes, in µs per call):
+**TaskbarClear round by round** (2026-11-10, v1.1.0 with tray icon; each cell is the median of 7 passes, in µs per call):
 
 | Round | Running CREATE | Not running CREATE | Running NAMECHANGE | Not running NAMECHANGE |
 |---|---|---|---|---|
-| 1 | 25.8 | 41.2 | 1.2 | 1.2 |
-| 2 | 28.3 | 23.9 | 1.2 | 1.1 |
-| 3 | 28.6 | 95.4 | 1.1 | 1.1 |
-| 4 | 17.4 | 43.3 | 1.2 | 1.2 |
-| 5 | 43.8 | 18.7 | 1.2 | 1.2 |
-| **Median** | **28.3** | **41.2** | **1.2** | **1.2** |
+| 1 | 11.4 | 15.9 | 0.6 | 0.6 |
+| 2 | 18.6 | 15.7 | 0.6 | 0.5 |
+| 3 | 15.4 | 13.5 | 0.6 | 0.5 |
+| 4 | 16.3 | 10.6 | 1.2 | 0.6 |
+| 5 | 14.0 | 13.6 | 0.5 | 0.7 |
+| 6 | 14.9 | 13.9 | 0.6 | 0.7 |
+| 7 | 15.8 | 17.6 | 0.9 | 0.6 |
+| **Median** | **15.4** | **13.9** | **0.6** | **0.6** |
 
-For CREATE neither state is consistently higher; the differences are within the round-to-round noise. NAMECHANGE is practically identical. For contrast, TranslucentTB measured in the same session was clearly higher in every one of 5 rounds (see the table under "Why"). Raw output of all three runs: [`bench/results/2026-11-09.txt`](bench/results/2026-11-09.txt). So the conclusion is: **in this machine's comparison, no increase in `NotifyWinEvent` call time was measured.**
+For CREATE neither state is consistently higher; the differences are within the round-to-round noise. NAMECHANGE is practically identical. A second 7-round run right afterwards gave medians of 14.1 / 18.3, the opposite direction, so a gap of a few µs is noise. For contrast, TranslucentTB was clearly higher in every one of 5 rounds (see the table under "Why"). Raw output: [`bench/results/2026-11-10.txt`](bench/results/2026-11-10.txt) (both TaskbarClear runs) and [`bench/results/2026-11-09.txt`](bench/results/2026-11-09.txt) (the two TranslucentTB runs, plus a TaskbarClear run taken while the machine was noisier, with not-running CREATE jumping between 18.7 and 95.4). So the conclusion is: **in this machine's comparison, no increase in `NotifyWinEvent` call time was measured.**
 
 **Re-run it** (only the built-in Windows PowerShell is needed, no admin rights):
 
