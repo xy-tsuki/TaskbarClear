@@ -2,6 +2,10 @@
 
 新的写在上面。
 
+## 2026-11-10
+- 发布 v1.1.0：PR xy-tsuki/TaskbarClear#4 以 merge 方式合并到 main（`3375fc1`），在上面打 tag `v1.1.0`。Release 建成草稿，附带用 main 代码编译的 `TaskbarClear.exe`（42 KB，SHA-256 `6f4308fc…d06e47`）。PR 开好后等了 10 分钟 Codex review，没有提出问题。
+- 新增 `CHANGELOG.md`；PR 模板改成新格式（「过程中的调整」，每条附短 hash）。
+
 ## 2026-11-09
 - 用新脚本重测 TranslucentTB 2026.2（应用商店版），同一时段测三组，每组 5 轮。NAMECHANGE 中位数（运行中 / 未运行）：TTB 开启动态状态 94.2 / 1.2，关掉全部动态状态 67.3 / 1.3，TaskbarClear 1.1.0 是 1.2 / 1.2。TTB 两档每一轮都更高，TaskbarClear 互有高低。和最初的数据（81–89、46）大体一致，结论不变。README 的表换成新数据，原始输出存进 `bench/results/2026-11-09.txt`。`compare.ps1` 加了 `-Name`/`-Start`，可以测任意程序：测其他美化工具时会先退出 TaskbarClear，启动失败会重试，中途出错也会恢复原状。期间 `shell:AppsFolder` 启动 TTB 偶发「Class not registered」，所以加了重试。
 - 按 review 意见让性能结论可复测：探针搬进仓库 `bench/winevent_probe.ps1`，新增交替对照脚本 `bench/compare.ps1`。README 里「开销实测为零」改成「在本机对照中，未测到 NotifyWinEvent 调用耗时增加」，新增「性能对照与复测」一节（系统版本、硬件、5 轮数据、复测步骤、覆盖不到的地方）。CPU 也补了实测：每分钟约 16 ms。
