@@ -36,10 +36,10 @@
 | WinEvent 钩子 | 无 | 有 |
 | 注入 Explorer | 无 | 有（`ExplorerHooks.dll`） |
 | 窗口事件额外开销 | 实测为零 | 每个事件多几十 µs |
-| 体积 | 单个 exe，约 9 KB | 需要安装 |
+| 体积 | 单个 exe，约 40 KB（大部分是图标） | 需要安装 |
 | 依赖 | Win10 自带的 .NET Framework 4.x | 自带运行库 |
-| 源码 | 一个文件，约 140 行 | 完整的应用工程 |
-| 资源占用 | 内存约 15 MB，CPU 几乎为零 | — |
+| 源码 | 一个文件，约 350 行 | 完整的应用工程 |
+| 资源占用 | 内存约 20 MB，CPU 几乎为零 | — |
 | 动态效果（最大化变色、开始菜单变样式等） | 不支持 | 支持 |
 
 **适合你**，如果：你只想要一个全透明的任务栏，同时在意游戏帧稳定或系统响应。
@@ -52,10 +52,12 @@
 也可以自己编译。Win10 自带编译器，不用装任何东西：
 
 ```bat
-C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe -nologo -optimize -target:winexe -out:TaskbarClear.exe TaskbarClear.cs
+C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe -nologo -optimize -target:winexe -win32icon:assets\icon\TaskbarClear.ico -out:TaskbarClear.exe TaskbarClear.cs
 ```
 
-双击 `TaskbarClear.exe` 就开始在后台运行，没有窗口，只允许运行一个实例。
+双击 `TaskbarClear.exe` 就开始在后台运行，托盘区会出现它的图标（可能被收在「^」里，可以拖出来）。只允许运行一个实例。
+
+开机自启和退出都可以在托盘菜单里完成，见下面的「托盘菜单」。不想用托盘的话，也可以用命令行。
 
 开机自启（把路径换成你自己的）：
 
@@ -69,11 +71,25 @@ reg add HKCU\Software\Microsoft\Windows\CurrentVersion\Run /v TaskbarClear /t RE
 reg delete HKCU\Software\Microsoft\Windows\CurrentVersion\Run /v TaskbarClear /f
 ```
 
-退出程序（它没有窗口，必须加 `/f`）：
+强制退出（不会恢复任务栏样式，之后可以再运行一次 `TaskbarClear.exe /restore`）：
 
 ```bat
 taskkill /f /im TaskbarClear.exe
 ```
+
+## 托盘菜单
+
+右键托盘图标会弹出菜单。系统语言是中文时显示中文，否则显示英文。
+
+| 菜单项 | 作用 |
+|---|---|
+| `TaskbarClear 1.1.0` | 标题，显示版本号 |
+| 立即重新设置透明 | 任务栏偶尔变回不透明时点一下。双击托盘图标效果一样 |
+| 开机自启 | 打勾表示已开启，点一下切换。改的是上面那个 `Run` 注册表项，只有指向当前这个 exe 时才打勾 |
+| 重启 TaskbarClear | 用同样的参数重新启动 |
+| 退出（恢复默认任务栏） | 先把任务栏恢复成系统样式，再退出 |
+
+托盘图标用的是普通的 `Shell_NotifyIcon`，不装钩子，开着它对窗口事件的开销仍然是零。Explorer 重启后图标会自动回来。
 
 ## 用法
 
@@ -84,6 +100,7 @@ taskkill /f /im TaskbarClear.exe
 | `/once` | 只设置一次透明，然后退出 |
 | `/restore` | 恢复系统默认样式，然后退出 |
 | `/keeponshell` | 开始菜单、搜索打开时也不切回系统样式 |
+| `/notray` | 不显示托盘图标（只能用命令行退出） |
 | `/log D:\path\log.txt` | 把前台窗口变化和每次设置的时间记到文件里，便于排查 |
 | `/debug` | 用控制台方式编译（`-target:exe`）时，把前台窗口变化输出到 stderr |
 
@@ -93,6 +110,7 @@ taskkill /f /im TaskbarClear.exe
 - Explorer 时不时会把样式改回去，而跨进程又读不到任务栏当前的样式（`GetWindowCompositionAttribute` 会失败），所以改为**每 100 ms 读一次前台窗口的类名**。这只是一次读取，不订阅任何事件。
 - 开始菜单、搜索、操作中心、任务视图或任务栏本身在前台时，Explorer 正在自己设置任务栏样式，这时**不去碰任务栏**，避免两边来回抢着设置导致闪烁。
 - 焦点回到普通窗口后立刻重新设置透明，并在 100、300、700 ms 后各补一次；另外每 30 秒兜底一次。
+- Explorer 重启时会广播 `TaskbarCreated` 消息。程序收到后立刻给新任务栏设置透明，并重新加上托盘图标。
 
 ## 常见问题
 
@@ -104,7 +122,7 @@ reg add HKCU\Software\ExplorerPatcher /v MMOldTaskbarAl /t REG_DWORD /d 0 /f
 ```
 
 **任务栏偶尔变回不透明？**
-最多等 30 秒，或者切换一下窗口就会恢复。重启 Explorer 后也会自动对新的任务栏生效。
+最多等 30 秒，或者切换一下窗口就会恢复；也可以双击托盘图标，或在托盘菜单里点「立即重新设置透明」。重启 Explorer 后也会马上对新的任务栏生效。
 
 ## 技术栈
 

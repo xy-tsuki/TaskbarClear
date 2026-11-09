@@ -36,10 +36,10 @@ After closing TranslucentTB and a few other heavy subscribers, switching Task Ma
 | WinEvent hooks | None | Yes |
 | Injects into Explorer | No | Yes (`ExplorerHooks.dll`) |
 | Extra cost per window event | Measured zero | Tens of µs per event |
-| Size | One exe, about 9 KB | Needs installing |
+| Size | One exe, about 40 KB (mostly the icon) | Needs installing |
 | Dependencies | .NET Framework 4.x built into Win10 | Ships its own runtime |
-| Source | One file, about 140 lines | Full application project |
-| Resource use | About 15 MB RAM, near-zero CPU | — |
+| Source | One file, about 350 lines | Full application project |
+| Resource use | About 20 MB RAM, near-zero CPU | — |
 | Dynamic looks (tint when maximized, Start menu style, etc.) | Not supported | Supported |
 
 **Good fit** if you just want a fully transparent taskbar and care about stable frame times or system responsiveness.
@@ -52,10 +52,12 @@ Download `TaskbarClear.exe` from [Releases](https://github.com/xy-tsuki/TaskbarC
 Or build it yourself. Win10 ships with the compiler; nothing to install:
 
 ```bat
-C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe -nologo -optimize -target:winexe -out:TaskbarClear.exe TaskbarClear.cs
+C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe -nologo -optimize -target:winexe -win32icon:assets\icon\TaskbarClear.ico -out:TaskbarClear.exe TaskbarClear.cs
 ```
 
-Double-click `TaskbarClear.exe` and it runs in the background with no window. Only one instance is allowed.
+Double-click `TaskbarClear.exe` and it runs in the background with an icon in the notification area (it may be hidden under "^"; drag it out if you like). Only one instance is allowed.
+
+Starting with Windows and quitting can both be done from the tray menu; see "Tray menu" below. If you'd rather not use the tray, the command line works too.
 
 Start with Windows (replace the path with yours):
 
@@ -69,11 +71,25 @@ Remove from startup:
 reg delete HKCU\Software\Microsoft\Windows\CurrentVersion\Run /v TaskbarClear /f
 ```
 
-Quit (it has no window, so `/f` is required):
+Force quit (this does not restore the taskbar style; run `TaskbarClear.exe /restore` afterwards if needed):
 
 ```bat
 taskkill /f /im TaskbarClear.exe
 ```
+
+## Tray menu
+
+Right-click the tray icon to open the menu. It is shown in Chinese when the system language is Chinese, and in English otherwise.
+
+| Item | Effect |
+|---|---|
+| `TaskbarClear 1.1.0` | Title showing the version |
+| Re-apply transparency now | Use it when the taskbar turns opaque. Double-clicking the tray icon does the same |
+| Start with Windows | Checked when enabled; click to toggle. It edits the `Run` registry value above and is only checked when that value points to this exe |
+| Restart TaskbarClear | Restart with the same arguments |
+| Exit (restore default taskbar) | Restore the system taskbar look, then quit |
+
+The tray icon uses plain `Shell_NotifyIcon` with no hooks, so the per-event cost is still zero. The icon comes back by itself after Explorer restarts.
 
 ## Usage
 
@@ -84,6 +100,7 @@ taskkill /f /im TaskbarClear.exe
 | `/once` | Apply transparency once, then exit |
 | `/restore` | Restore the system default look, then exit |
 | `/keeponshell` | Don't switch back to the system look while Start or Search is open |
+| `/notray` | Don't show the tray icon (quit from the command line instead) |
 | `/log D:\path\log.txt` | Log foreground changes and each apply to a file, for troubleshooting |
 | `/debug` | With a console build (`-target:exe`), print foreground changes to stderr |
 
@@ -93,6 +110,7 @@ taskkill /f /im TaskbarClear.exe
 - Explorer resets the style from time to time, and the current style can't be read across processes (`GetWindowCompositionAttribute` fails). So it **reads the foreground window's class every 100 ms** instead. That is a plain read; it subscribes to nothing.
 - While Start, Search, Action Center, Task View or the taskbar itself is in front, Explorer is styling the taskbar itself, so TaskbarClear **leaves the taskbar alone** to avoid a tug-of-war that causes flicker.
 - When focus returns to a normal window it re-applies at once, then again after 100, 300 and 700 ms, plus a fallback every 30 s.
+- When Explorer restarts it broadcasts a `TaskbarCreated` message. TaskbarClear then applies transparency to the new taskbar right away and re-adds its tray icon.
 
 ## FAQ
 
@@ -104,7 +122,7 @@ reg add HKCU\Software\ExplorerPatcher /v MMOldTaskbarAl /t REG_DWORD /d 0 /f
 ```
 
 **The taskbar sometimes turns opaque again?**
-It comes back within 30 s, or as soon as you switch windows. After Explorer restarts it also applies to the new taskbar automatically.
+It comes back within 30 s, or as soon as you switch windows. You can also double-click the tray icon, or choose "Re-apply transparency now" from the tray menu. After Explorer restarts it applies to the new taskbar right away.
 
 ## Tech stack
 

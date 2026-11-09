@@ -5,10 +5,11 @@
 
 ## 技术栈
 - C#（单文件），用系统自带的 .NET Framework 4.x `csc.exe` 编译，没有项目文件，也没有 NuGet 依赖。
-- Win32 API（P/Invoke 调用）：`SetWindowCompositionAttribute`（WCA_ACCENT_POLICY）、`GetForegroundWindow`、`FindWindowEx`、`GetClassName`。
+- Win32 API（P/Invoke 调用）：`SetWindowCompositionAttribute`（WCA_ACCENT_POLICY）、`GetForegroundWindow`、`FindWindowEx`、`GetClassName`，托盘用 `Shell_NotifyIcon` + `TrackPopupMenu`。
 
 ## 目录结构
-- `TaskbarClear.cs`：全部源码，包括参数解析、找任务栏窗口、设置透明强调色、前台窗口轮询主循环。
+- `TaskbarClear.cs`：全部源码，包括参数解析、找任务栏窗口、设置透明强调色、前台窗口轮询（定时器驱动）、托盘图标和菜单。
+- `assets/icon/`：图标的 SVG 源文件、多尺寸 `TaskbarClear.ico` 和生成脚本 `build-icon.ps1`，编译时用 `-win32icon` 嵌进 exe。
 - `README.md` / `README.en.md`：中英文说明，包括为什么要做、和 TranslucentTB 的对比、安装、用法、原理和常见问题。改一边要同步另一边。
 - `LICENSE`：GPL-3.0。
 - `docs/devlog.md`：开发日志。
@@ -18,9 +19,10 @@
 
 ## 常用命令
 - 构建（正式版，无控制台窗口）：
-  `C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe -nologo -optimize -target:winexe -out:TaskbarClear.exe TaskbarClear.cs`
+  `C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe -nologo -optimize -target:winexe -win32icon:assets\icon\TaskbarClear.ico -out:TaskbarClear.exe TaskbarClear.cs`
 - 构建（控制台版，配合 `/debug` 看输出）：把 `-target:winexe` 换成 `-target:exe`。
-- 重新编译前先退出正在运行的实例：`taskkill /f /im TaskbarClear.exe`（不加 `/f` 关不掉，因为它没有窗口），编译完再启动 `TaskbarClear.exe`。
+- 重新编译前先退出正在运行的实例：`taskkill /f /im TaskbarClear.exe`（不加 `/f` 关不掉，因为它只有隐藏窗口），编译完再启动 `TaskbarClear.exe`。
+- 不点菜单也能触发菜单命令：向类名 `TaskbarClearWnd` 的窗口 PostMessage `WM_COMMAND`（0x0111），wParam 为 1 立即重设、2 切换自启、3 重启、4 退出。PowerShell 里调 `FindWindow` 时标题参数要传 `[NullString]::Value`，传 `$null` 会变成空字符串而找不到窗口。
 - 手动验证：`TaskbarClear.exe /once` 设置一次透明后退出；`TaskbarClear.exe /restore` 恢复系统样式后退出。
 - 类型检查 / lint：没有，编译通过就算检查通过。
 - 测试：没有自动测试。行为只能人眼看任务栏来验证。
@@ -30,7 +32,8 @@
 - 跨进程调用 `GetWindowCompositionAttribute` 会失败，读不出 Explorer 有没有把样式重置，所以改为轮询前台窗口类名：平时每 100 ms 一次，刚离开系统界面后的补设阶段每 20 ms 一次。
 - 前台窗口是开始菜单、搜索、操作中心（`Windows.UI.Core.CoreWindow`）、任务视图（`MultitaskingViewFrame` / `XamlExplorerHostIslandWindow`），或任务栏本身时，算作「系统界面」，这时不碰任务栏。弹出类界面打开时会调一次 `Restore()`（可用 `/keeponshell` 关掉）。
 - 离开系统界面后，在 0/100/300/700 ms 各补设一次透明；另外每 30 秒兜底一次（`/interval` 可调）。
-- 单实例：命名互斥量 `Local\TaskbarClearSingleInstance`。
+- 主循环是隐藏顶层窗口的消息循环 + `SetTimer`（不能用 message-only 窗口，否则收不到 `TaskbarCreated` 广播）。收到 `TaskbarCreated` 时重新加托盘图标并立刻设置透明。`/notray` 关掉托盘图标。
+- 单实例：命名互斥量 `Local\TaskbarClearSingleInstance`，用 `WaitOne` 抢锁（不能靠 `new Mutex(true, ..., out created)` 的 `created`，它只表示互斥量是不是新建的）。菜单「重启」启动的新进程带 `/restarted`，最多等 5 秒让旧进程放锁。
 - 开机自启：注册表 `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` 下的 `TaskbarClear` 项。
 
 ## 已知问题
