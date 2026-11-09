@@ -1,0 +1,22 @@
+<!-- TaskbarClear 图标：一块屏幕，蓝天和山一直延伸到底部，任务栏图标直接落在壁纸上（任务栏透明）。
+     按 16x16 像素网格绘制，边都对齐整像素，缩到托盘的 16 像素也清晰。生成 ICO：assets/icon/build-icon.ps1 -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5aa2ee"/>
+      <stop offset="1" stop-color="#bfe0ff"/>
+    </linearGradient>
+  </defs>
+  <!-- 深色外框：在任何壁纸上都能看清轮廓 -->
+  <rect x="0" y="1" width="16" height="14" rx="1.5" fill="#16233a"/>
+  <!-- 屏幕：天空渐变铺满 -->
+  <rect x="1" y="2" width="14" height="12" fill="url(#sky)"/>
+  <!-- 远山浅、近山深，近山一直铺到屏幕底部，代表透明任务栏后面的壁纸 -->
+  <path d="M1 9 L5 5 L8 8 L11 4 L15 8 L15 14 L1 14 Z" fill="#7d9fd3"/>
+  <path d="M1 11 L4 9 L7 11 L11 8 L15 11 L15 14 L1 14 Z" fill="#34548a"/>
+  <!-- 透明任务栏上的图标：开始按钮 + 三个应用，直接落在近山上 -->
+  <rect x="2" y="12" width="2" height="1" fill="#ffffff"/>
+  <rect x="6" y="12" width="2" height="1" fill="#ffd866"/>
+  <rect x="9" y="12" width="2" height="1" fill="#ffffff"/>
+  <rect x="12" y="12" width="2" height="1" fill="#ffffff"/>
+</svg>
