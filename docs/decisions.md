@@ -20,3 +20,10 @@
 - 背景：这个工具很小，希望在任何 Win10 上都能直接编译，不装 SDK。
 - 结论：只用 .NET Framework 4.x 的 `csc.exe`，不用项目文件和 NuGet。
 - 以后什么情况会改：需要拆成多个文件或引入依赖时，再考虑改成 SDK 风格的项目。
+
+## 暂不自己实现副屏图标居中（2026-11-09）
+- 背景：EP 的副屏居中会让主屏搜索框闪，想看看能不能把居中集成进 TaskbarClear。
+- EP 的做法（`ExplorerPatcher/TaskbarCenter.cpp`）：注入 Explorer 后挂钩 `MSTaskListWClass` 调用的 `GetClientRect`，返回一个偏移过的区域，让 Explorer 自己把图标排到中间；每次调用都在进程内用 MSAA 量按钮宽度，还会 `SetWindowPos`/`MoveWindow` 挪开始按钮和搜索框，副屏的会额外 `InvalidateRect`；另外直接改 Explorer 内存里的一处跳转来关掉动画。必须注入，违反本项目的硬性约束，不能照搬。
+- 比较过：照搬 EP（需要注入，否决）；TaskbarX（用 UI Automation 频繁轮询，可能增加事件开销，自带透明还会冲突，否决）；不注入的自制版（跨进程 MSAA 量宽度 + `SetWindowPos` 挪副屏的 `MSTaskListWClass`，用 `EnumWindows` 数窗口作为变化触发，不碰开始按钮和搜索框）。
+- 结论：用户选择先不做，保留 EP 的副屏居中，接受偶尔闪烁。
+- 以后什么情况会改：闪烁难以忍受时，在 `spike/secondary-center` 分支上做不注入的自制版原型，做完要用探针确认 WinEvent 耗时不增加。
