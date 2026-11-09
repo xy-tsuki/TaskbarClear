@@ -18,14 +18,15 @@ While chasing occasional stutter in Apex Legends and whole-system freezes when s
 
 Closing resident programs one by one showed TranslucentTB was one of the biggest subscribers:
 
-| State | CREATE event | NAMECHANGE event |
-|---|---|---|
-| TranslucentTB not running | 20.7 µs | 0.8 µs |
-| TranslucentTB running (dynamic states on, default) | 69–84 µs | 81–89 µs |
-| TranslucentTB running (all dynamic states off) | 47 µs | 46 µs |
-| **TaskbarClear running** | **no consistent difference from not running** | **no consistent difference from not running** |
+Here are the results re-measured in one session with the comparison script in this repository (running / not running, µs per call):
 
-(Standard user, median of 7 runs, using an early version of the probe. Full comparison data for the TaskbarClear row and how to re-run it: [Measuring it yourself](#measuring-it-yourself).)
+| Program | CREATE event | NAMECHANGE event | Higher in every round? |
+|---|---|---|---|
+| TranslucentTB 2026.2 (dynamic states on) | 88.4 / 18.4 | 94.2 / 1.2 | Yes, 5 of 5 |
+| TranslucentTB 2026.2 (all dynamic states off) | 49.2 / 10.1 | 67.3 / 1.3 | Yes, 5 of 5 |
+| **TaskbarClear 1.1.0** | **28.3 / 41.2** | **1.2 / 1.2** | **No, goes both ways** |
+
+(Each cell is the median of 5 rounds, 7 passes per round. NAMECHANGE shows the difference most clearly: TranslucentTB adds 66–93 µs per event, while no difference was measured for TaskbarClear. Test machine, how to re-run, and what this does not cover: [Measuring it yourself](#measuring-it-yourself).)
 
 After closing TranslucentTB and a few other heavy subscribers, switching Task Manager tabs went from a **30–60 s full freeze** to **done in 5–10 s**. I still wanted a transparent taskbar, so I wrote TaskbarClear: it keeps only the "transparent" feature and implements it without any hook.
 
@@ -118,18 +119,18 @@ The tray icon uses plain `Shell_NotifyIcon` with no hooks. I re-ran the comparis
 
 **Test machine**: Windows 10 Home China 22H2 (build 19045.6466), AMD Ryzen 7 5800H, standard user, ExplorerPatcher installed.
 
-**Results** (2026-11-09, v1.1.0 with tray icon; each cell is the median of 7 passes, in µs per call):
+**TaskbarClear round by round** (2026-11-09, v1.1.0 with tray icon; each cell is the median of 7 passes, in µs per call):
 
 | Round | Running CREATE | Not running CREATE | Running NAMECHANGE | Not running NAMECHANGE |
 |---|---|---|---|---|
-| 1 | 19.9 | 21.2 | 3.2 | 5.2 |
-| 2 | 7.3 | 8.8 | 4.3 | 2.5 |
-| 3 | 10.7 | 8.1 | 1.8 | 1.7 |
-| 4 | 13.0 | 10.0 | 3.9 | 3.6 |
-| 5 | 10.2 | 29.8 | 2.9 | 4.1 |
-| **Median** | **10.7** | **10.0** | **3.2** | **3.6** |
+| 1 | 25.8 | 41.2 | 1.2 | 1.2 |
+| 2 | 28.3 | 23.9 | 1.2 | 1.1 |
+| 3 | 28.6 | 95.4 | 1.1 | 1.1 |
+| 4 | 17.4 | 43.3 | 1.2 | 1.2 |
+| 5 | 43.8 | 18.7 | 1.2 | 1.2 |
+| **Median** | **28.3** | **41.2** | **1.2** | **1.2** |
 
-Neither state is consistently higher; the differences are within the round-to-round noise. So the conclusion is: **in this machine's comparison, no increase in `NotifyWinEvent` call time was measured.**
+For CREATE neither state is consistently higher; the differences are within the round-to-round noise. NAMECHANGE is practically identical. For contrast, TranslucentTB measured in the same session was clearly higher in every one of 5 rounds (see the table under "Why"). Raw output of all three runs: [`bench/results/2026-11-09.txt`](bench/results/2026-11-09.txt). So the conclusion is: **in this machine's comparison, no increase in `NotifyWinEvent` call time was measured.**
 
 **Re-run it** (only the built-in Windows PowerShell is needed, no admin rights):
 
@@ -142,6 +143,12 @@ Neither state is consistently higher; the differences are within the round-to-ro
 
 3. Check whether "running" is clearly higher than "not running" in every round. If they go back and forth, no difference was measured.
 
+To test another program, pass its process name with `-Name` and how to launch it with `-Start`. When testing another taskbar tool, the script quits TaskbarClear first and starts it again afterwards. For example, the Microsoft Store version of TranslucentTB:
+
+```bat
+powershell -ExecutionPolicy Bypass -File bench\compare.ps1 -Rounds 5 -Name TranslucentTB -Start "shell:AppsFolder\28017CharlesMilette.TranslucentTB_v826wp6bftszj!TranslucentTB"
+```
+
 To just see the current cost (for example before and after closing some program, to find heavy subscribers), run the probe alone:
 
 ```bat
@@ -151,7 +158,7 @@ powershell -ExecutionPolicy Bypass -File bench\winevent_probe.ps1
 **What this does not cover**
 - It only measures WinEvent dispatch cost, not the CPU used by polling itself, and not game frame times.
 - It was measured on the one machine above only. The numbers depend heavily on background programs and can vary several-fold on the same machine at different times, so only compare runs alternated in the same session; absolute numbers from different machines are not comparable.
-- A new process measures much higher for its first few seconds after creating a window. The probe discards one pass and takes the median of several passes to avoid this. The TranslucentTB numbers under "Why" came from an early version of the probe that did not do this, so their absolute values may be inflated; the before/after comparison within the same session still holds.
+- A new process measures much higher for its first few seconds after creating a window. The probe discards one pass and takes the median of several passes to avoid this. The 73–232 µs figure at the start of "Why" came from the original investigation with an early probe that did not do this, so it may be inflated; the numbers in the table were all re-measured with the current script.
 
 ## FAQ
 
