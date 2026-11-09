@@ -33,12 +33,12 @@ try {
     }
 
     # 48 像素及以下转成 32 位 BMP（带 alpha）：.NET Framework 的 System.Drawing.Icon 读不了小尺寸的 PNG 帧。
-    # 256 像素保留 PNG，这是 Windows 的惯例，体积也小。
+    # 64 和 256 像素保留 PNG（Windows 的惯例），体积小得多。
     Add-Type -AssemblyName System.Drawing
     $frames = @()
     foreach ($p in $pngs) {
         $s = $p[0]
-        if ($s -ge 256) { $frames += , @($s, $p[1]); continue }
+        if ($s -gt 48) { $frames += , @($s, $p[1]); continue }
         $img = New-Object Drawing.Bitmap (New-Object IO.MemoryStream (, $p[1]))
         $fs = New-Object IO.MemoryStream
         $fw = New-Object IO.BinaryWriter $fs
