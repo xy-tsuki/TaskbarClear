@@ -37,12 +37,12 @@
 | 窗口事件额外开销 | 本机对照中未测到增加 | 本机测得每个事件多几十 µs |
 | 体积 | 单个 exe，约 40 KB（大部分是图标） | 需要安装 |
 | 依赖 | Win10 自带的 .NET Framework 4.x | 自带运行库 |
-| 源码 | 一个文件，约 350 行 | 完整的应用工程 |
+| 源码 | 一个文件，约 400 行 | 完整的应用工程 |
 | 资源占用 | 内存约 20 MB；CPU 本机实测每分钟约 16 ms（单核的 0.03%） | — |
 | 动态效果（最大化变色、开始菜单变样式等） | 不支持 | 支持 |
 
 **适合你**，如果：你只想要一个全透明的任务栏，同时在意游戏帧稳定或系统响应。
-**不适合你**，如果：你需要按窗口状态切换任务栏样式，或者用的是 Windows 11。
+**不适合你**，如果：你需要按窗口状态切换任务栏样式，或者用的是 Windows 11 原生任务栏（原因和办法见[常见问题](#常见问题)）。
 
 ## 安装
 
@@ -171,6 +171,15 @@ reg add HKCU\Software\ExplorerPatcher /v MMOldTaskbarAl /t REG_DWORD /d 0 /f
 
 **任务栏偶尔变回不透明？**
 最多等 30 秒，或者切换一下窗口就会恢复；也可以双击托盘图标，或在托盘菜单里点「立即重新设置透明」。重启 Explorer 后也会马上对新的任务栏生效。
+
+**Windows 11 上为什么不管用？**
+从 Windows 11 22H2 的 22621.1343 起，任务栏的背景改成由 Explorer 里的 XAML 界面自己绘制，盖在窗口的强调色上面。TaskbarClear 的设置调用会成功，但被这层背景挡住，看不出变化。TranslucentTB 当时也因此失效，后来改成往 Explorer 里注入代码去改 XAML 背景；TaskbarClear 不注入 Explorer，所以没法这样做。
+
+检测到 Windows 11 原生任务栏时，TaskbarClear 会弹一次托盘提示，托盘菜单里也会显示「Win11 原生任务栏：透明不生效」。
+
+办法：用 [ExplorerPatcher](https://github.com/valinet/ExplorerPatcher) 把任务栏样式切换成 Windows 10 样式（ExplorerPatcher 设置 →「任务栏」→「任务栏样式」）。切换后任务栏又是传统的 Win32 窗口，TaskbarClear 就能照常让它透明。只想让原生任务栏更透一点、不要求全透明的话，可以打开系统的「透明效果」设置。
+
+（作者的电脑是 Windows 10，Windows 11 上的行为来自公开资料和 TranslucentTB 的 issue，还没有在真机上验证过。遇到问题欢迎开 issue。）
 
 ## 技术栈
 
