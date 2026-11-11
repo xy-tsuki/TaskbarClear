@@ -133,7 +133,7 @@ static class TaskbarClear {
 
     const uint WM_DESTROY = 0x0002, WM_NULL = 0x0000, WM_TIMER = 0x0113, WM_COMMAND = 0x0111, WM_APP_TRAY = 0x8001;
     const uint WM_LBUTTONDBLCLK = 0x0203, WM_RBUTTONUP = 0x0205, WM_CONTEXTMENU = 0x007B;
-    const int NIM_ADD = 0, NIM_DELETE = 2, NIF_MESSAGE = 1, NIF_ICON = 2, NIF_TIP = 4;
+    const int NIM_ADD = 0, NIM_MODIFY = 1, NIM_DELETE = 2, NIF_MESSAGE = 1, NIF_ICON = 2, NIF_TIP = 4, NIF_INFO = 0x10, NIIF_WARNING = 2;
     const uint MF_STRING = 0, MF_GRAYED = 1, MF_CHECKED = 8, MF_SEPARATOR = 0x800;
     const uint TPM_RIGHTBUTTON = 0x2, TPM_RETURNCMD = 0x100, TPM_NONOTIFY = 0x80;
     const int CMD_APPLY = 1, CMD_AUTOSTART = 2, CMD_RESTART = 3, CMD_EXIT = 4;
@@ -163,6 +163,47 @@ static class TaskbarClear {
         var d = TrayData();
         Shell_NotifyIcon(NIM_DELETE, ref d);
     }
+    // ---------- Win11 原生任务栏检测 ----------
+    // Win11 22H2（22621.1343）起，任务栏背景由 Explorer 里的 XAML 自己绘制，盖在窗口的强调色上面，
+    // SetWindowCompositionAttribute 调用成功但看不到效果。这种任务栏的 Shell_TrayWnd 下面挂着 XAML 宿主子窗口；
+    // ExplorerPatcher 的 Win10 样式任务栏没有这个子窗口，透明照常生效，所以不提示。
+    static readonly string[] xamlHostClasses = {
+        "Windows.UI.Composition.DesktopWindowContentBridge",   // 系统 XAML（22H2 起的正式版）
+        "Microsoft.UI.Content.DesktopChildSiteBridge",         // WinAppSDK（新的 Insider 版本），未在真机确认
+    };
+    static int OsBuild() {
+        // Environment.OSVersion 在没有清单的程序里会谎报成 6.2，所以读注册表
+        try {
+            using (var k = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows NT\CurrentVersion")) {
+                int b; return k != null && int.TryParse(k.GetValue("CurrentBuildNumber") as string, out b) ? b : 0;
+            }
+        } catch { return 0; }
+    }
+    static bool XamlTaskbar() {
+        if (OsBuild() < 22000) return false;
+        IntPtr tray = FindWindowEx(IntPtr.Zero, IntPtr.Zero, "Shell_TrayWnd", null);
+        if (tray == IntPtr.Zero) return false;
+        foreach (var c in xamlHostClasses)
+            if (FindWindowEx(tray, IntPtr.Zero, c, null) != IntPtr.Zero) return true;
+        return false;
+    }
+    static bool xamlTaskbar, xamlWarned;
+    // 每次启动、每次 Explorer 重启后检查一次；检测到就弹一次托盘气泡（每次运行只弹一次），菜单里也会注明
+    static void CheckXamlTaskbar() {
+        xamlTaskbar = XamlTaskbar();
+        if (!xamlTaskbar) return;
+        Log("xaml taskbar detected, build " + OsBuild());
+        if (xamlWarned || !showTray) return;
+        xamlWarned = true;
+        var d = TrayData();
+        d.uFlags = NIF_INFO;
+        d.dwInfoFlags = NIIF_WARNING;
+        d.szInfoTitle = T("透明对这个任务栏不生效", "Transparency has no effect on this taskbar");
+        d.szInfo = T("这是 Windows 11 原生任务栏，背景由系统自己绘制。可以用 ExplorerPatcher 切换成 Windows 10 样式任务栏，详见 README。",
+                     "This is the native Windows 11 taskbar, which draws its own background. Switch to the Windows 10 style taskbar with ExplorerPatcher; see the README.");
+        Shell_NotifyIcon(NIM_MODIFY, ref d);
+    }
+
     static NOTIFYICONDATA TrayData() {
         var d = new NOTIFYICONDATA { hWnd = hwndMain, uID = 1, szTip = "", szInfo = "", szInfoTitle = "" };
         d.cbSize = Marshal.SizeOf(typeof(NOTIFYICONDATA));
@@ -187,6 +228,7 @@ static class TaskbarClear {
     static void ShowMenu() {
         IntPtr menu = CreatePopupMenu();
         AppendMenu(menu, MF_STRING | MF_GRAYED, IntPtr.Zero, "TaskbarClear " + Version);
+        if (xamlTaskbar) AppendMenu(menu, MF_STRING | MF_GRAYED, IntPtr.Zero, T("Win11 原生任务栏：透明不生效", "Native Win11 taskbar: no effect"));
         AppendMenu(menu, MF_SEPARATOR, IntPtr.Zero, null);
         AppendMenu(menu, MF_STRING, (IntPtr)CMD_APPLY, T("立即重新设置透明", "Re-apply transparency now"));
         AppendMenu(menu, MF_STRING | (AutostartOn() ? MF_CHECKED : 0), (IntPtr)CMD_AUTOSTART, T("开机自启", "Start with Windows"));
@@ -294,6 +336,7 @@ static class TaskbarClear {
             Log("taskbar created");
             AddTrayIcon();
             Apply(false); StartSettle();
+            CheckXamlTaskbar();
             return IntPtr.Zero;
         }
         if (msg == WM_DESTROY) { PostQuitMessage(0); return IntPtr.Zero; }
@@ -340,6 +383,7 @@ static class TaskbarClear {
             AddTrayIcon();
 
             Apply(false);
+            CheckXamlTaskbar();
             UpdateTimer();
             MSG m;
             while (GetMessage(out m, IntPtr.Zero, 0, 0) > 0) { TranslateMessage(ref m); DispatchMessage(ref m); }
