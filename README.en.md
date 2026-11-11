@@ -39,12 +39,12 @@ After closing TranslucentTB and a few other heavy subscribers, switching Task Ma
 | Extra cost per window event | No increase measured on my machine | Tens of µs per event, measured on my machine |
 | Size | One exe, about 40 KB (mostly the icon) | Needs installing |
 | Dependencies | .NET Framework 4.x built into Win10 | Ships its own runtime |
-| Source | One file, about 350 lines | Full application project |
+| Source | One file, about 400 lines | Full application project |
 | Resource use | About 20 MB RAM; CPU measured at about 16 ms per minute on my machine (0.03% of one core) | — |
 | Dynamic looks (tint when maximized, Start menu style, etc.) | Not supported | Supported |
 
 **Good fit** if you just want a fully transparent taskbar and care about stable frame times or system responsiveness.
-**Not a fit** if you want the taskbar style to change with window state, or you are on Windows 11.
+**Not a fit** if you want the taskbar style to change with window state, or you use the native Windows 11 taskbar (why, and what to do: see the [FAQ](#faq)).
 
 ## Install
 
@@ -173,6 +173,15 @@ reg add HKCU\Software\ExplorerPatcher /v MMOldTaskbarAl /t REG_DWORD /d 0 /f
 
 **The taskbar sometimes turns opaque again?**
 It comes back within 30 s, or as soon as you switch windows. You can also double-click the tray icon, or choose "Re-apply transparency now" from the tray menu. After Explorer restarts it applies to the new taskbar right away.
+
+**Why doesn't it work on Windows 11?**
+Since Windows 11 22H2 build 22621.1343, the taskbar background is drawn by a XAML UI inside Explorer, on top of the window's accent. TaskbarClear's call succeeds, but that layer hides the result. TranslucentTB broke for the same reason and later switched to injecting code into Explorer to change the XAML background; TaskbarClear does not inject into Explorer, so it can't do that.
+
+When it detects the native Windows 11 taskbar, TaskbarClear shows a one-time tray notification, and the tray menu shows "Native Win11 taskbar: no effect".
+
+What to do: use [ExplorerPatcher](https://github.com/valinet/ExplorerPatcher) to switch the taskbar style to Windows 10 (ExplorerPatcher settings → Taskbar → Taskbar style). The taskbar is then a classic Win32 window again and TaskbarClear makes it transparent as usual. If you only want the native taskbar a bit more see-through rather than fully clear, turn on the system "Transparency effects" setting.
+
+(The author's machine runs Windows 10. The Windows 11 behavior is based on public information and TranslucentTB issues and has not been verified on real hardware yet. Issues are welcome.)
 
 ## Tech stack
 

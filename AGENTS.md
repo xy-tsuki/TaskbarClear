@@ -36,6 +36,7 @@
 - 前台窗口是开始菜单、搜索、操作中心（`Windows.UI.Core.CoreWindow`）、任务视图（`MultitaskingViewFrame` / `XamlExplorerHostIslandWindow`），或任务栏本身时，算作「系统界面」，这时不碰任务栏。弹出类界面打开时会调一次 `Restore()`（可用 `/keeponshell` 关掉）。
 - 离开系统界面后，在 0/100/300/700 ms 各补设一次透明；另外每 30 秒兜底一次（`/interval` 可调）。
 - 主循环是隐藏顶层窗口的消息循环 + `SetTimer`（不能用 message-only 窗口，否则收不到 `TaskbarCreated` 广播）。收到 `TaskbarCreated` 时重新加托盘图标并立刻设置透明。`/notray` 关掉托盘图标。
+- Win11 原生任务栏（22621.1343 起背景由 XAML 绘制）上透明不生效。启动和收到 `TaskbarCreated` 时检测：系统 build ≥ 22000 且 `Shell_TrayWnd` 下有 XAML 宿主子窗口（`Windows.UI.Composition.DesktopWindowContentBridge` 或 `Microsoft.UI.Content.DesktopChildSiteBridge`），就弹一次托盘气泡，菜单里加一行灰色提示。ExplorerPatcher 的 Win10 样式任务栏没有这个子窗口，不会误报。检测逻辑没有在 Win11 真机上验证过。
 - 单实例：命名互斥量 `Local\TaskbarClearSingleInstance`，用 `WaitOne` 抢锁（不能靠 `new Mutex(true, ..., out created)` 的 `created`，它只表示互斥量是不是新建的）。菜单「重启」启动的新进程带 `/restarted`，最多等 5 秒让旧进程放锁。
 - 开机自启：注册表 `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` 下的 `TaskbarClear` 项。
 
