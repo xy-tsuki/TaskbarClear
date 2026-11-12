@@ -84,7 +84,7 @@ Right-click the tray icon to open the menu. It is shown in Chinese when the syst
 
 | Item | Effect |
 |---|---|
-| `TaskbarClear 1.1.0` | Title showing the version |
+| `TaskbarClear 1.2.0` | Title showing the version |
 | Re-apply transparency now | Use it when the taskbar turns opaque. Double-clicking the tray icon does the same |
 | Start with Windows | Checked when enabled; click to toggle. It edits the `Run` registry value above and is only checked when that value points to this exe |
 | Restart TaskbarClear | Restart with the same arguments |

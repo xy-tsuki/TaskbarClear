@@ -18,7 +18,7 @@ using System.Threading;
 using Microsoft.Win32;
 
 static class TaskbarClear {
-    const string Version = "1.1.0";
+    const string Version = "1.2.0";
 
     // ---------- 透明强调色 ----------
     [StructLayout(LayoutKind.Sequential)] struct AccentPolicy { public int State; public int Flags; public uint Color; public int AnimationId; }
