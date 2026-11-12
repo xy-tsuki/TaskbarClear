@@ -2,6 +2,9 @@
 
 新的写在上面。
 
+## 2026-11-13
+- 发布 v1.2.0：PR xy-tsuki/TaskbarClear#8 以 merge 方式合并到 main（`1825065`），打 tag `v1.2.0`。Release 建成草稿，附带用 main 代码编译的 `TaskbarClear.exe`（44 KB，SHA-256 `36f27112…0b9d98`）。Codex review 约 2 分钟完成，没有提出问题。
+
 ## 2026-11-11
 - 查 Win11 下不生效的原因：22621.1343 起任务栏背景由 Explorer 内的 XAML 绘制，盖住窗口强调色，`SetWindowCompositionAttribute` 返回成功但看不到效果。TranslucentTB 靠注入 Explorer 改 XAML 背景解决，本项目不注入，所以只做检测和提示：检测到 Win11 原生任务栏时弹一次托盘气泡、菜单加一行灰色说明，README 常见问题写明原因和 ExplorerPatcher 切回 Win10 样式任务栏的办法。本机是 Win10，用「把 Win10 的 `TrayNotifyWnd` 当成 XAML 宿主」的临时变体验证了提示路径能走通，正式版在 Win10 上不触发；Win11 真机上的检测还没验证。
 - 顺手查了 TranslucentTB 的 issue：没有人指出 WinEvent 订阅本身拖慢窗口事件，最接近的是 TranslucentTB/TranslucentTB#318（游戏中卡顿，2020 年至今未解决）。
